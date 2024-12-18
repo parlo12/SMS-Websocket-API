@@ -101,18 +101,17 @@ module.exports = (io) => {
             const { apiKey, deviceId, receiver, content } = msg;
 
             try {
-                // Verify CRM by API key
-                const crm = await CRM.findOne({ apiKey });
-                if (!crm) return socket.emit("error", { message: "Invalid API key" });
-
                 // Check if device is connected
                 const deviceSocketId = deviceConnections[deviceId];
-                if (!deviceSocketId) return socket.emit("error", { message: "Device not connected" });
+                if (!deviceSocketId) {
+                    console.log("Device not connected");
+                    return socket.emit("error", {message: "Device not connected"});
+                }
 
                 // Store message as PENDING in database
                 const newMessage = new Message({
                     deviceId,
-                    crmId: crm._id,
+                    crmId: new Types.ObjectId(socket.crmId),
                     sender: "CRM",
                     receiver,
                     content,
