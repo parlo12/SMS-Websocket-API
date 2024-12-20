@@ -62,6 +62,7 @@ module.exports = (io) => {
 
         // Incoming SMS from Device → CRM
         socket.on("incomingSMS", async (msg) => {
+            console.log("Incoming SMS:", msg);
             const { deviceId, sender, content } = msg;
 
             try {
@@ -154,6 +155,19 @@ module.exports = (io) => {
                 }
             } catch (error) {
                 console.error("Error updating delivery status:", error.message);
+            }
+        });
+
+        // get pending messages
+        socket.on("getPendingMessages", async (msg) => {
+            // const {deviceId} = msg;
+            const deviceId = socket.deviceId;
+
+            try {
+                const messages = await Message.find({deviceId, sender:"CRM",  status: "PENDING"}).sort({createdAt: 1});
+                io.to(socket.id).emit("pendingMessages", messages);
+            } catch (error) {
+                console.error("Error getting pending messages:", error.message);
             }
         });
 
