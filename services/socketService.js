@@ -147,7 +147,7 @@ module.exports = (io) => {
                 const crmSocketId = crmConnections[updatedMessage.crmId];
                 if (crmSocketId) {
                     io.to(crmSocketId).emit("deliveryStatus", {
-                        messageId: updatedMessage.messageId,
+                        messageId: updatedMessage._id,
                         status: updatedMessage.status,
                         updatedAt: updatedMessage.updatedAt,
                     });
