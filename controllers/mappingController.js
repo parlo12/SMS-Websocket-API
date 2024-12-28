@@ -14,6 +14,10 @@ exports.linkDeviceToCRM = async (req, res) => {
         const device = await Device.findOne({ deviceId });
         if (!device) return res.status(400).json({ message: "Invalid device ID" });
 
+        // check if device is already linked to the same CRM
+        const existingMapping = await DeviceCRMMapping.findOne({ deviceId, crmId: crm._id });
+        if (existingMapping) return res.status(400).json({ message: "Device already linked to the same CRM" });
+
         // Create mapping
         const mapping = new DeviceCRMMapping({ deviceId, crmId: crm._id });
         await mapping.save();
