@@ -9,6 +9,7 @@ const mappingRoutes = require("./routes/mapping");
 const messageRoutes = require("./routes/messages");
 const socketService = require("./services/socketService");
 
+const deviceConnections = {};
 const app = express();
 app.use(bodyParser.json());
 app.use("/api", apiRoutes);
@@ -17,6 +18,9 @@ app.use("/messages", messageRoutes);
 
 const server = http.createServer(app);
 const io = socketIo(server);
+
+// Pass `io` and `deviceConnections` to Express
+app.set("io", io);
 
 mongoose.connect(DB_URI).then(() => console.log("DB Connected"));
 
