@@ -70,6 +70,7 @@ module.exports = (io) => {
                 const mappings = await DeviceCRMMapping.find({ deviceId }).populate("crmId");
 
                 for (const mapping of mappings) {
+                    console.log(`Mapping found: ${mapping}`);
                     const crmSocketId = crmConnections[mapping.crmId._id];
 
                     // Store message in database
@@ -90,13 +91,15 @@ module.exports = (io) => {
                             continue;
                         }
 
-                        console.log(`Message saved successfully: ${savedMessage._id}`);
+                        const messageId = savedMessage._id.toString();
+
+                        console.log(`Message saved successfully: ${messageId}`);
 
                         // Send message to CRM
                         if (crmSocketId) {
                             io.to(crmSocketId).emit("sms", {
                                 deviceId,
-                                messageId: savedMessage._id.toString(),
+                                messageId: messageId,
                                 sender,
                                 content,
                             });
