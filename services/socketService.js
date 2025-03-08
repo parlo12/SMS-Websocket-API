@@ -82,14 +82,31 @@ module.exports = (io) => {
                         status: "PENDING",
                     });
 
-                    await newMessage.save();
+                    try {
+                        const savedMessage = await newMessage.save();
 
-                    // Send message to CRM
-                    if (crmSocketId) {
-                        io.to(crmSocketId).emit("sms", { deviceId, messageId: newMessage._id.toString(), sender, content });
-                        newMessage.status = "SENT";
-                        await newMessage.save();
-                        console.log(`Incoming SMS sent to CRM ${mapping.crmId._id}`);
+                        if (!savedMessage._id) {
+                            console.error("Message saved but missing _id:", savedMessage);
+                            continue;
+                        }
+
+                        console.log(`Message saved successfully: ${savedMessage._id}`);
+
+                        // Send message to CRM
+                        if (crmSocketId) {
+                            io.to(crmSocketId).emit("sms", {
+                                deviceId,
+                                messageId: savedMessage._id.toString(),
+                                sender,
+                                content,
+                            });
+
+                            savedMessage.status = "SENT";
+                            await savedMessage.save();
+                            console.log(`Incoming SMS sent to CRM ${mapping.crmId._id}`);
+                        }
+                    } catch (saveError) {
+                        console.error("Error saving message:", saveError);
                     }
                 }
             } catch (error) {
