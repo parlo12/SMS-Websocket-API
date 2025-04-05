@@ -5,6 +5,7 @@ const DeviceCRMMapping = require("../models/DeviceCRMMapping");
 const Message = require("../models/Message");
 const { JWT_SECRET } = require("../config");
 const {Mongoose, Types} = require("mongoose");
+const {post} = require("axios");
 
 const deviceConnections = {}; // { deviceId: socketId }
 const crmConnections = {};    // { crmId: socketId }
@@ -71,7 +72,13 @@ module.exports = (io) => {
 
                 for (const mapping of mappings) {
                     console.log(`Mapping found: ${mapping}`);
-                    const crmSocketId = crmConnections[mapping.crmId._id];
+
+                    const callbackUrl = mapping.crmId.callbackUrl;
+
+                    if (!callbackUrl) {
+                        console.warn(`No callback URL found for CRM ${mapping.crmId._id}`);
+                        continue;
+                    }
 
                     // Store message in database
                     const newMessage = new Message({
@@ -95,19 +102,22 @@ module.exports = (io) => {
 
                         console.log(`Message saved successfully: ${messageId}`);
 
-                        // Send message to CRM
-                        if (crmSocketId) {
-                            io.to(crmSocketId).emit("sms", {
+                        try {
+                            // Send message to CRM via callback URL
+                            await post(callbackUrl, {
                                 deviceId,
-                                messageId: messageId,
+                                messageId,
                                 sender,
                                 content,
                             });
 
                             savedMessage.status = "SENT";
                             await savedMessage.save();
-                            console.log(`Incoming SMS sent to CRM ${mapping.crmId._id}`);
+                            console.log(`Incoming SMS sent to CRM via callback ${mapping.crmId._id}`);
+                        } catch (callbackError) {
+                            console.error(`Error sending to callback URL for CRM ${mapping.crmId._id}:`, callbackError.message);
                         }
+
                     } catch (saveError) {
                         console.error("Error saving message:", saveError);
                     }
